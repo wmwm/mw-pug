@@ -1,0 +1,28 @@
+{
+  "dependencies": {
+    "aws-sdk": "^2.1692.0",
+    "discord.js": "^14.21.0",
+    "dotenv": "^17.2.1"
+  },
+  "name": "discord-bot",
+  "version": "1.0.0",
+  "description": "A comprehensive Ruby Discord bot for managing QuakeWorld Team Fortress pickup games (PUGs) with automated AWS server deployment and AI-powered features.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wmwm/discord-bot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wmwm/discord-bot/issues"
+  },
+  "homepage": "https://github.com/wmwm/discord-bot#readme"
+}

@@ -1,0 +1,40 @@
+version: '1.0'
+description: 'Test Configuration'
+
+notification:
+  enabled: true
+  triggers:
+    match_queue:
+      enabled: true
+      tier: 0
+    pre_game:
+      enabled: true
+      tier: 0
+    role_retention:
+      enabled: true
+      tier: 1
+  timeout_seconds:
+    match_queue: 300
+    pre_game: 120
+    role_retention: 86400
+  dm_templates:
+    match_queue: '**Queue Keep-Alive** for {match_name} - Reply with `!ready` to stay in queue!'
+    pre_game: '**Match Ready!** Your match {match_name} is about to start. Reply with `!ready` to confirm.'
+    role_retention: '**Role Retention** - Reply with `!active` to keep your {role_name} role.'
+
+upgrade_sequence:
+  - id: 'test_schema_update'
+    name: 'Test Schema Update'
+    execute_order: 1
+    requires_restart: false
+    rollback_supported: true
+    steps:
+      - type: 'schema_update'
+        target: 'notification'
+        action: 'transform'
+        params:
+          from_version: '0.9'
+          to_version: '1.0'
+          transforms:
+            - field: 'triggers'
+              transform: 'convert_to_objects'

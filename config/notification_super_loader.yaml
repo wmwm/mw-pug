@@ -1,0 +1,195 @@
+# Notification Super Loader Configuration
+# This file defines upgrade steps for the Notification Agent system
+# Each step is executed in sequence when the loader runs
+
+version: "1.0.0"
+description: "Automated upgrade sequence for the Notification Agent"
+maintainer: "PugBot Team"
+upgrade_sequence:
+  - id: "upgrade-tier-structure"
+    name: "Upgrade to Tiered Notification Structure"
+    description: "Converts flat notification system to a tiered priority structure"
+    execute_order: 1
+    requires_restart: false
+    rollback_supported: true
+    steps:
+      - type: "schema_update"
+        target: "config_schema"
+        action: "transform"
+        params:
+          from_version: "0.9.0"
+          to_version: "1.0.0"
+          transforms:
+            - path: "triggers"
+              operation: "restructure"
+              old_format: "flat_boolean"
+              new_format: "tiered_object"
+              default_mapping:
+                match_queue: 
+                  enabled: true
+                  tier: 0
+                pre_game:
+                  enabled: true
+                  tier: 0
+                role_retention:
+                  enabled: false
+                  tier: 1
+      - type: "data_migration"
+        target: "user_preferences"
+        action: "add_field"
+        params:
+          field_name: "notification_tiers"
+          default_value:
+            max_tier: 2
+            tier0_enabled: true
+            tier1_enabled: true
+            tier2_enabled: true
+
+  - id: "add-fallback-channels"
+    name: "Add Tiered Fallback Channels"
+    description: "Creates separate fallback channels for different notification tiers"
+    execute_order: 2
+    requires_restart: false
+    rollback_supported: true
+    steps:
+      - type: "discord_resources"
+        target: "channels"
+        action: "ensure_exists"
+        params:
+          channels:
+            - name: "critical-notifications"
+              description: "Fallback channel for critical notifications (Tier 0)"
+              permissions:
+                @everyone: ["VIEW_CHANNEL", "READ_MESSAGES"]
+                moderators: ["MANAGE_MESSAGES"]
+              store_id_as: "fallback_channel_tier0_id"
+            - name: "important-notifications"
+              description: "Fallback channel for important notifications (Tier 1)"
+              permissions:
+                @everyone: ["VIEW_CHANNEL", "READ_MESSAGES"]
+                moderators: ["MANAGE_MESSAGES"]
+              store_id_as: "fallback_channel_tier1_id"
+            - name: "info-notifications"
+              description: "Fallback channel for informational notifications (Tier 2)"
+              permissions:
+                @everyone: ["VIEW_CHANNEL", "READ_MESSAGES"]
+                moderators: ["MANAGE_MESSAGES"]
+              store_id_as: "fallback_channel_tier2_id"
+      - type: "config_update"
+        target: "notification_config"
+        action: "add_fields"
+        params:
+          fields:
+            fallback_channel_tier0_id: "{channel:fallback_channel_tier0_id}"
+            fallback_channel_tier1_id: "{channel:fallback_channel_tier1_id}"
+            fallback_channel_tier2_id: "{channel:fallback_channel_tier2_id}"
+
+  - id: "add-command-handlers"
+    name: "Add Tiered Notification Commands"
+    description: "Adds new commands for managing tiered notifications"
+    execute_order: 3
+    requires_restart: true
+    rollback_supported: false
+    steps:
+      - type: "command_registry"
+        target: "commands"
+        action: "register"
+        params:
+          commands:
+            - name: "notifytier"
+              description: "Set your notification tier preferences"
+              options:
+                - name: "max_tier"
+                  description: "Maximum notification tier to receive (0-2)"
+                  type: "integer"
+                  required: true
+                  min_value: 0
+                  max_value: 2
+              permissions: "everyone"
+              handler: "handleNotifyTierCommand"
+            - name: "notifystatus"
+              description: "Show your current notification settings"
+              permissions: "everyone"
+              handler: "handleNotifyStatusCommand"
+
+  - id: "enable-inter-agent-coordination"
+    name: "Enable Inter-Agent Coordination"
+    description: "Sets up coordination between Notification Agent and Player State Agent"
+    execute_order: 4
+    requires_restart: true
+    rollback_supported: true
+    steps:
+      - type: "agent_binding"
+        target: "event_bus"
+        action: "subscribe"
+        params:
+          source_agent: "PlayerState"
+          events:
+            - event: "user_status_changed"
+              handler: "onPlayerStatusChanged"
+            - event: "user_preferences_updated" 
+              handler: "onPlayerPreferencesUpdated"
+      - type: "agent_binding"
+        target: "api"
+        action: "expose"
+        params:
+          methods:
+            - name: "hasPendingNotifications"
+              handler: "hasPendingNotifications"
+            - name: "getPendingNotificationCount"
+              handler: "getPendingNotificationCount"
+            - name: "clearNotifications"
+              handler: "clearNotifications"
+
+  - id: "setup-audit-logging"
+    name: "Setup Enhanced Audit Logging"
+    description: "Configures enhanced audit logging for the notification system"
+    execute_order: 5
+    requires_restart: false
+    rollback_supported: true
+    steps:
+      - type: "discord_resources"
+        target: "channels"
+        action: "ensure_exists"
+        params:
+          channels:
+            - name: "notification-audit-log"
+              description: "Audit log for notification system events"
+              permissions:
+                @everyone: []
+                moderators: ["VIEW_CHANNEL", "READ_MESSAGES"]
+                operators: ["VIEW_CHANNEL", "READ_MESSAGES"]
+              store_id_as: "notification_audit_channel_id"
+      - type: "config_update"
+        target: "notification_config"
+        action: "add_fields"
+        params:
+          fields:
+            audit_log_channel_id: "{channel:notification_audit_channel_id}"
+            audit_log_levels:
+              error: true
+              warning: true
+              info: true
+              debug: false
+            audit_retention_days: 30
+      - type: "database_schema"
+        target: "notification_logs"
+        action: "ensure_table"
+        params:
+          table_name: "notification_logs"
+          schema:
+            - name: "id"
+              type: "string"
+              primary_key: true
+            - name: "event_type"
+              type: "string"
+            - name: "user_id"
+              type: "string"
+            - name: "notification_type"
+              type: "string"
+            - name: "tier"
+              type: "integer"
+            - name: "timestamp"
+              type: "datetime"
+            - name: "details"
+              type: "json"

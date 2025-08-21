@@ -1,0 +1,197 @@
+# QA Notification Test Configuration
+# This file defines test cases and expectations for the Notification Agent QA tests
+
+version: "1.0.0"
+description: "QA test configurations for v1.3.0 notification system"
+test_config:
+  # Test user IDs - replace with actual test user IDs for your environment
+  test_users:
+    standard: "123456789012345678"  # Regular test user
+    dnd: "123456789012345679"       # User with Do Not Disturb status
+    offline: "123456789012345680"   # Offline user
+    
+  # Test channel IDs
+  channels:
+    qa_logs: "123456789012345681"   # QA logs channel
+    
+  # Test scenario configurations
+  scenarios:
+    EXP_BOUNDARY:
+      timeout_seconds: 2
+      description: "Test expiration exactly at boundary"
+      
+    EXP_FUTURE_JUMP:
+      initial_timeout: 86400  # 1 day
+      jump_to_seconds: 2      # Jump to 2 seconds before expiry
+      description: "Test future expiration with time jump"
+      
+    EXP_MIXED_TYPES:
+      types:
+        - type: "test_mix1"
+          timeout: 2
+        - type: "test_mix2"
+          timeout: 3
+        - type: "test_mix3"
+          timeout: 4
+      description: "Test mixed notification types expiring in sequence"
+      
+    KA_DORMANT:
+      user_type: "offline"
+      queue_id: "test-dormant-queue"
+      match_name: "Dormant Test Match"
+      description: "Test keep-alive for dormant users"
+      
+    KA_ACTIVE_IDLE:
+      user_type: "standard"
+      queue_id: "test-active-idle-queue"
+      match_name: "Active Idle Test Match"
+      description: "Test keep-alive for active idle users"
+      
+    KA_CONCURRENT:
+      user_type: "standard"
+      queue_count: 3
+      delay_ms: 50
+      description: "Test concurrent keep-alive notifications"
+      
+    PRE_UNKNOWN_TYPE:
+      type: "non_existent_type"
+      description: "Test preprocessing with unknown notification type"
+      
+    PRE_MISSING_FIELDS:
+      type: "match_queue"
+      # Only provide queue_id, omit match_name
+      description: "Test preprocessing with missing optional fields"
+      
+    PRE_SCHEMA_DRIFT:
+      yaml_file: "notification_test_drift.yaml"
+      drifted_fields:
+        - name: "fallback_channel_tier0"
+          correct_name: "fallback_channel_tier0_id"
+        - name: "Triggers"
+          correct_name: "triggers"
+      description: "Test schema drift in notification YAML"
+      
+    Q_HIGH_BURST:
+      user_type: "standard"
+      burst_count: 10
+      type: "test_burst"
+      description: "Test high burst rate of notifications"
+      
+    Q_OUT_OF_ORDER:
+      user_type: "standard"
+      types:
+        - type: "test_order_1"
+          timeout: 10
+        - type: "test_order_2"
+          timeout: 2
+      description: "Test out-of-order notification delivery"
+      
+    Q_FALLBACK:
+      user_type: "standard"
+      force_dm_fail: true
+      type: "test_fallback"
+      description: "Test fallback channel when direct messages fail"
+      
+    CFG_HOT_SWAP:
+      yaml_file: "notification_test_hotswap.yaml"
+      new_config:
+        timeout_seconds:
+          test_hotswap: 60
+        dm_templates:
+          test_hotswap: "This is a hot-swapped template: {message}"
+        triggers:
+          test_hotswap:
+            enabled: true
+            tier: 1
+      description: "Test hot-swapping configuration"
+      
+    CFG_CONFLICT:
+      yaml_files:
+        - "notification_test_conflict1.yaml"
+        - "notification_test_conflict2.yaml"
+      conflicting_values:
+        - field: "timeout_seconds.test_conflict"
+          value1: 60
+          value2: 120
+        - field: "dm_templates.test_conflict"
+          value1: "Version 1: {message}"
+          value2: "Version 2: {message}"
+      description: "Test conflicting configuration updates"
+      
+    FAIL_NO_SUPERLOADER:
+      user_type: "standard"
+      type: "test_no_superloader"
+      description: "Test resilience when SuperLoader is unavailable"
+      
+    FAIL_PARTIAL_RESTORE:
+      user_type: "standard"
+      force_crash_at: "preprocess_notification"
+      description: "Test partial restoration after a crash"
+      
+    FAIL_INVALID_YAML:
+      yaml_file: "notification_test_invalid.yaml"
+      invalid_content: |
+        version: '1.0'
+        description: 'Invalid YAML Test'
+        target: 'notification'
+        
+        upgrade_sequence:
+          - id: 'invalid_yaml_test'
+            name: 'Test invalid YAML handling'
+            execute_order: 1
+            steps:
+              # Invalid YAML - missing colon
+              type 'config_update'
+              target: 'notification'
+              action: 'update_fields'
+      description: "Test handling of invalid YAML"
+
+notifications:
+  queue_join:
+    title: "✅ **You're in the game queue!**"
+    body: |
+      📊 **Queue Status:** {queue_count}/{queue_max}
+
+      **Players Joined:**
+      {#players}
+      {player_emoji} {player_name} ({role}) – {time_in_queue}
+      {/players}
+
+      💬 Invite your squad: `!invite`
+    style:
+      spacing: true
+      bold_keys: true
+      role_icons: true
+
+  keepalive_ping:
+    title: "🛡️ **Queue Still Active** – {queue_count}/{queue_max} players"
+    body: |
+      ⏱️ Idle timer: {idle_time}
+
+      **Players pending:**
+      {#pending_players}
+      - {player_name}
+      {/pending_players}
+
+      React with 🎯 to confirm you're still in!
+    style:
+      spacing: true
+      bold_keys: true
+      emoji_prompt: "🎯"
+
+  match_ready:
+    title: "📢 **Match Ready!** – {game_name} {map_name}"
+    body: |
+      **Join Now:**
+      🔗 Connect: `!server join`
+      🗺️ Map: {map_name}
+      👥 Team size: {team_size}v{team_size}
+
+      Respond in 30s:
+      👍 Accept | 👎 Decline
+    style:
+      spacing: true
+      bold_keys: true
+      reaction_options:
+        - "👍"
+        - "👎"

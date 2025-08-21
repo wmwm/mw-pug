@@ -1,0 +1,247 @@
+# Complete QWTF Parity Configuration with Command Manifest Integration
+# Unified configuration supporting QWTF.live workflow compatibility
+
+pug_bot:
+  # Core QWTF command aliases
+  command_aliases:
+    "++": "join"
+    "--": "leave"
+    "!tpg": "join"
+    "!ntpg": "leave"
+    "!add": "join"
+    "!remove": "leave"
+    "!map": "map"
+    "!forcemap": "map"
+    "!server": "server"
+    "!status": "status"
+    "!start": "start"
+    "!end": "end"
+    "!requeue": "requeue"
+    "!queue": "queue"
+    "!team": "team"
+    "!choose": "choose"
+    "!transfer": "transfer"
+    "!merge": "merge"
+    "!maps": "maps"
+    "!instances": "instances"
+    "!up": "up"
+    "!down": "down"
+    "!notify": "notify"
+    "!voice": "voice"
+    "!help": "help"
+
+  # Welcome embed configuration
+  welcome_embed:
+    enabled: true
+    title: "🎯 Welcome to QWTF.live-Compatible PUG Bot!"
+    description: "This bot provides 100% QWTF.live command compatibility with enhanced features. All your familiar commands work exactly the same!"
+    color: 0x00ff00
+    fields:
+      - name: "🚀 QWTF Quick Commands"
+        value: |
+          `
+          ++         → Join queue (QWTF style)
+          --         → Leave queue (QWTF style)
+          !tpg       → Join queue (alternative)
+          !ntpg      → Leave queue (alternative)
+          !map <name> → Vote/force map selection
+          !server <region> → Set preferred server
+          !status    → Show current queue status
+          `
+        inline: false
+      - name: "📋 Full Command Set"
+        value: |
+          **Queue:** !join, !leave, !queue, !team, !status
+          **Match:** !start, !end, !requeue, !choose, !transfer
+          **Maps:** !map, !maps, !forcemap
+          **Servers:** !server, !instances, !up, !down
+          **Social:** !notify, !voice, !help
+        inline: false
+      - name: "⚡ Enhanced Features"
+        value: |
+          • Smart notification preferences
+          • ELO tracking and display
+          • Auto team balancing
+          • Late join swap detection
+          • Voice channel integration
+        inline: false
+    auto_trigger:
+      on_first_join: true
+      cooldown_hours: 24
+
+  # Late join swap configuration
+  late_join_swap:
+    enabled: true
+    time_window_minutes: 5
+    target_team: "losing"
+    swap_criteria:
+      - "skill_balance"
+      - "recent_join_time"
+    notification_priority: "high"
+    auto_execute: false
+
+  # Region preferences
+  region_preferences:
+    default: "na_east"
+    auto_ping: true
+    supported_regions:
+      - "na_east"
+      - "na_west"
+      - "eu_west"
+      - "oceania"
+
+# Enhanced notification system
+notifications:
+  # Priority-based notification routing
+  priorities:
+    high:
+      events:
+        - "queue_filled"
+        - "match_started"
+        - "teams_assigned"
+        - "late_join_swap"
+        - "server_ready"
+      channels:
+        - "general"
+        - "pug-notifications"
+        - "dm"
+      delivery:
+        immediate: true
+        batch: false
+    medium:
+      events:
+        - "player_joined"
+        - "player_left"
+        - "map_voted"
+        - "server_selected"
+        - "queue_progress"
+      channels:
+        - "pug-notifications"
+      delivery:
+        immediate: false
+        batch: true
+        batch_interval_seconds: 30
+    low:
+      events:
+        - "player_status_change"
+        - "elo_update"
+        - "preference_changed"
+      channels:
+        - "pug-notifications"
+      delivery:
+        immediate: false
+        batch: true
+        batch_interval_seconds: 120
+
+  # User preference system
+  user_preferences:
+    default_level: "medium"
+    quiet_hours:
+      enabled: true
+      start: "22:00"
+      end: "08:00"
+      timezone: "local"
+    channels:
+      dm_enabled: true
+      ping_enabled: true
+      embed_enabled: true
+
+  # Analytics and audit
+  audit:
+    enabled: true
+    retention_days: 30
+    track_delivery: true
+    track_user_engagement: true
+
+# Command integration with bot manifest
+command_integration:
+  # Merge QWTF aliases with existing bot commands
+  merge_strategy: "qwtf_priority"
+  conflict_resolution: "alias_wins"
+  
+  # Module mapping from command manifest
+  modules:
+    queue:
+      commands: ["join", "leave", "add", "remove", "queue", "team", "status"]
+      qwtf_aliases: ["++", "--", "!tpg", "!ntpg"]
+    match_control:
+      commands: ["start", "end", "requeue", "choose", "transfer", "merge"]
+      qwtf_aliases: ["!start", "!end", "!requeue"]
+    server_control:
+      commands: ["server", "instances", "up", "down"]
+      qwtf_aliases: ["!server"]
+    maps:
+      commands: ["map", "maps", "forcemap"]
+      qwtf_aliases: ["!map", "!forcemap"]
+    social:
+      commands: ["notify", "voice", "help"]
+      qwtf_aliases: ["!notify", "!voice", "!help"]
+    stats:
+      commands: ["stats", "league_elos", "rankings"]
+      qwtf_aliases: []
+    settings:
+      commands: ["set", "show", "psyncroles"]
+      qwtf_aliases: []
+
+  # Special syntax handling
+  special_syntax:
+    "++" :
+      canonical: "join"
+      description: "QWTF.live style join command"
+      module: "queue"
+    "--":
+      canonical: "leave" 
+      description: "QWTF.live style leave command"
+      module: "queue"
+
+# Feature flags for controlled rollout
+feature_flags:
+  qwtf_parity:
+    enabled: true
+    rollout_percentage: 100
+    description: "Complete QWTF.live command compatibility"
+  
+  enhanced_notifications:
+    enabled: true
+    rollout_percentage: 100
+    description: "Priority-based notification system"
+  
+  late_join_swap:
+    enabled: true
+    rollout_percentage: 50
+    description: "Automatic late join team swap detection"
+  
+  welcome_embeds:
+    enabled: true
+    rollout_percentage: 100
+    description: "Enhanced welcome messages with command guide"
+
+  # Staging configuration
+  staging:
+    enabled: true
+    test_duration_hours: 48
+    rollback_triggers:
+      - "error_rate_threshold: 5%"
+      - "user_complaints: 3"
+      - "performance_degradation: 20%"
+
+# Monitoring and analytics
+monitoring:
+  metrics:
+    - "command_usage_by_alias"
+    - "qwtf_migration_success"
+    - "notification_delivery_rates"
+    - "user_preference_adoption"
+  
+  alerts:
+    alias_resolution_failures: true
+    notification_delivery_failures: true
+    feature_flag_rollback: true
+
+# Migration support
+migration:
+  qwtf_live:
+    compatibility_mode: true
+    help_prompts: true
+    command_suggestions: true
+    migration_tracking: true

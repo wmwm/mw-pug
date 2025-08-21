@@ -1,0 +1,15 @@
+---
+# Default AWS AMI ID for server launches
+default_ami_id: "ami-0deeb71371199f16f" # Amazon Linux 2023 AMI 2023.8.20250808.1 x86_64 HVM kernel-6.1
+
+# FortressOne Docker deployment config
+fortressone_docker_image: "fortressone/fortressonesv:latest"
+fortressone_compose_file: "docker/fortressone-compose.yaml"
+fortressone_docker_host: "" # e.g. ssh://user@host for remote Docker, blank for local
+fortressone_instances:
+  default:
+    compose_file: "docker/fortressone-compose.yaml"
+    docker_host: ""
+
+
+

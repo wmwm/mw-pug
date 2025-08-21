@@ -1,0 +1,27 @@
+version: '1.0'
+description: 'Test Schema'
+
+notification_schema:
+  triggers:
+    type: object
+    properties:
+      enabled:
+        type: boolean
+      tier:
+        type: integer
+        enum: [0, 1, 2]
+    required: ['enabled', 'tier']
+  
+  timeout_seconds:
+    type: object
+    properties:
+      match_queue:
+        type: integer
+        minimum: 30
+      pre_game:
+        type: integer
+        minimum: 30
+      role_retention:
+        type: integer
+        minimum: 3600
+    required: ['match_queue', 'pre_game', 'role_retention']

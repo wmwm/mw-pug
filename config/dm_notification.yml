@@ -1,0 +1,83 @@
+# DM Notification Plugin Configuration
+
+dm_notification:
+  # Enable/disable the plugin
+  enabled: true
+  
+  # Notification triggers with priority tiers
+  # Tier 0: Critical/time-sensitive (keep-alive, ready checks)
+  # Tier 1: Important but not immediate (role updates, match results)
+  # Tier 2: Informational (announcements, tips)
+  triggers:
+    # Tier 0 - Critical notifications
+    match_queue:
+      enabled: true
+      tier: 0    # Critical priority
+    pre_game:
+      enabled: true
+      tier: 0    # Critical priority
+    
+    # Tier 1 - Important notifications
+    role_retention:
+      enabled: false
+      tier: 1    # Important priority
+    match_result:
+      enabled: false
+      tier: 1    # Important priority
+    
+    # Tier 2 - Informational notifications
+    announcements:
+      enabled: false
+      tier: 2    # Informational priority
+    tips:
+      enabled: false
+      tier: 2    # Informational priority
+  
+  # Timeouts (in seconds)
+  timeout_seconds:
+    # Tier 0 - Short timeouts
+    match_queue: 120       # 2 minutes for queue keep-alive
+    pre_game: 60           # 1 minute for pre-game ready check
+    
+    # Tier 1 - Medium timeouts
+    role_retention: 604800  # 1 week for role retention
+    match_result: 86400     # 1 day for match results
+    
+    # Tier 2 - Long or no timeouts (0 = no timeout)
+    announcements: 0       # No timeout (informational only)
+    tips: 0                # No timeout (informational only)
+  
+  # DM templates - use {placeholders} for dynamic content
+  dm_templates:
+    # Tier 0 - Critical
+    match_queue: "🔔 You're queued for {match_name}. Reply `!ready` within {timeout} seconds to stay in queue."
+    pre_game: "🎮 Your match {match_id} is about to start! Reply `!ready` within {timeout} seconds or you'll be removed."
+    
+    # Tier 1 - Important
+    role_retention: "👋 To maintain your {role_name} role, please reply `!active` within {timeout} seconds."
+    match_result: "📊 Your match {match_id} has ended. Final score: {score}. Rating change: {rating_change}."
+    
+    # Tier 2 - Informational
+    announcements: "📢 Server announcement: {message}"
+    tips: "💡 Tip: {message}"
+  
+  # Fallback channels for different tiers
+  # Each tier can have its own fallback channel
+  fallback_channel_id: "1234567890"       # Default fallback channel
+  fallback_channel_tier0_id: "1234567890" # Critical notifications (match queue, ready checks)
+  fallback_channel_tier1_id: "1234567891" # Important notifications (role updates)
+  fallback_channel_tier2_id: "1234567892" # Informational notifications (announcements)
+  
+  # Audit logging
+  log_channel_id: "0987654321"
+  audit_log: true
+  
+  # Auto-remove users who don't respond (for time-sensitive notifications)
+  auto_remove: true
+  
+  # Max pending notifications per user (to avoid spam)
+  max_pending_per_user: 3
+  
+  # Inter-agent coordination
+  respect_player_status: true     # Consider player status (AFK, DND) for non-critical notifications
+  respect_user_preferences: true  # Honor user notification preferences if available
