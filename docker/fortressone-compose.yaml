@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  fortressone:
+    image: fortressone/fortressonesv:latest
+    container_name: fortressone-server
+    ports:
+      - "27500:27500/udp"  # Game server port
+      - "27500:27500/tcp"  # Query port
+      - "27910:27910/udp"  # Additional game port
+    environment:
+      - F1_MAP=${F1_MAP:-2fort}
+      - F1_SERVER_NAME=PUG Bot Server
+      - F1_MAX_PLAYERS=8
+      - F1_PASSWORD=pugbot
+    restart: unless-stopped
+    volumes:
+      - fortressone-data:/fortressone/data
+
+volumes:
+  fortressone-data:
