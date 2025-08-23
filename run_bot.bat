@@ -1,0 +1,3 @@
+@echo off
+echo Starting PUG Bot...
+bundle exec ruby main.rb

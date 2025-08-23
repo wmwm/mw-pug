@@ -16,17 +16,31 @@ class AwsService
   
   # Initialize AWS EC2 client and resource with flexible region
   def initialize(region: ENV['AWS_REGION'] || 'ap-southeast-2', telemetry_service: nil, health_check_service: nil)
-    @ec2 = Aws::EC2::Client.new(region: region)
-    @resource = Aws::EC2::Resource.new(client: @ec2)
-    @region = region
-    
-    # Initialize telemetry and health check services
-    @telemetry = telemetry_service || TelemetryService.new
-    @health_check = health_check_service || HealthCheckService.new(@telemetry)
-    
-    # Start background health checks
-    health_check_interval = ENV['HEALTH_CHECK_INTERVAL']&.to_i || 60
-    @health_check.start_background_checks(health_check_interval) if health_check_interval > 0
+    begin
+      if ENV['AWS_ACCESS_KEY_ID'] && ENV['AWS_SECRET_ACCESS_KEY']
+        @ec2 = Aws::EC2::Client.new(region: region)
+        @resource = Aws::EC2::Resource.new(client: @ec2)
+        @aws_available = true
+      else
+        puts "AWS credentials not found. AWS features will be disabled."
+        @aws_available = false
+      end
+      
+      @region = region
+      
+      # Initialize telemetry and health check services
+      @telemetry = telemetry_service || TelemetryService.new
+      @health_check = health_check_service || HealthCheckService.new(@telemetry)
+      
+      # Start background health checks only if AWS is available
+      if @aws_available
+        health_check_interval = ENV['HEALTH_CHECK_INTERVAL']&.to_i || 60
+        @health_check.start_background_checks(health_check_interval) if health_check_interval > 0
+      end
+    rescue => e
+      puts "Error initializing AWS services: #{e.message}"
+      @aws_available = false
+    end
   end
 
   require 'yaml'
@@ -36,6 +50,14 @@ class AwsService
   def deploy_server(region: 'Sydney', map_name: 'dm4', hostname: 'Pug Fortress', instance_type: ENV['AWS_INSTANCE_TYPE'] || 't2.micro', extra_tags: {})
     operation_start = Time.now
     instance_id = nil
+    
+    # Check if AWS is available
+    unless @aws_available
+      return {
+        success: false,
+        error: 'AWS services are not available. Check your AWS credentials.'
+      }
+    end
     
     begin
       user_data_script = File.read('aws/user_data.sh')

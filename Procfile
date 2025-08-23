@@ -1,1 +1,1 @@
-worker: bundle exec ruby bot/pugbot.rb
+worker: bundle exec ruby main.rb
